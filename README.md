@@ -20,7 +20,8 @@ movie-recommendation-engine/
 │   ├── data_prep.py                  # Load + prepare MovieLens 1M into (X, Y)
 │   ├── visualize.py                  # Reusable matplotlib/seaborn plot helpers
 │   ├── movie_recommender.py          # Train MultinomialNB recommender + plots
-│   └── evaluate.py                   # Confusion matrix, precision/recall/F1, ROC/AUC
+│   ├── evaluate.py                   # Confusion matrix, precision/recall/F1, ROC/AUC
+│   └── tune.py                       # k-fold cross-validation hyperparameter search
 ├── images/                           # Generated result plots (committed)
 ├── data/                             # MovieLens 1M (gitignored, see Setup)
 ├── requirements.txt
@@ -53,7 +54,7 @@ This produces `data/ml-1m/ratings.dat` (and `movies.dat`, `users.dat`).
 - [x] **MovieLens 1M data preparation** (rating matrix + binary labels)
 - [x] **Movie recommender on MovieLens 1M** (`MultinomialNB`, ~71.6% accuracy)
 - [x] **Classification metrics** (confusion matrix, precision/recall/F1, ROC/AUC)
-- [ ] Hyperparameter tuning with k-fold cross-validation
+- [x] **Hyperparameter tuning** with k-fold cross-validation
 
 ## Findings
 
@@ -177,3 +178,65 @@ thumb (0.7–0.8 acceptable, 0.8–0.9 great) it sits just under "acceptable" �
 given we use only the very sparse rating signal. This gap between accuracy and
 AUC is the whole reason model tuning (next section) is judged on AUC, not
 accuracy.
+
+### 6. Tuning with k-fold cross-validation
+
+`src/tune.py` runs 5-fold stratified cross-validation, grid-searching the
+smoothing factor `alpha ∈ {1..6}` and `fit_prior ∈ {True, False}`, scoring each
+combination by mean AUC:
+
+![Cross-validated AUC](images/cv_auc_heatmap.png)
+
+```
+Best params: alpha=6, fit_prior=True (mean CV AUC = 0.65478)
+AUC with the best model: 0.6806
+```
+
+> **Note on reproducibility:** the book writes
+> `StratifiedKFold(n_splits=k, random_state=42)`, but current scikit-learn
+> requires `shuffle=True` whenever `random_state` is set, so this project uses
+> `shuffle=True`. The shuffled folds shift the absolute AUCs slightly, so the
+> "best" cell here (`alpha=6, True`) differs from the book's (`alpha=2, False`,
+> AUC 0.65823). The methodology and conclusion are unchanged.
+
+**Takeaway:** the most important result is what the heatmap *doesn't* show —
+**all 12 combinations fall within ~0.003 AUC of each other**. On this sparse
+rating signal the model is effectively insensitive to these hyperparameters, so
+tuning buys almost nothing (the retrained "best" model reaches AUC 0.681, about
+the same as the untuned 0.686). The real lever for improvement would be **better
+features** (movie genres, user demographics), not hyperparameter search.
+
+## Conclusions
+
+- Naïve Bayes, implemented from scratch, exactly matches scikit-learn on the toy
+  problem — the prior/likelihood/posterior math is verified.
+- On MovieLens 1M the recommender reaches **~71.6% accuracy** and **AUC 0.686**
+  using nothing but other-movie ratings.
+- **Accuracy is the wrong headline metric here**: with an 83/17 class imbalance,
+  a trivial "always recommend" baseline would beat it. Precision/recall/F1 and
+  AUC reveal the model is good at confirming likes but poor at catching dislikes.
+- Cross-validation shows the model is **insensitive to hyperparameter tuning** on
+  this signal; meaningful gains would come from richer features.
+
+### Possible extensions (the book's exercises)
+
+1. Add features from `movies.dat` (genres) and `users.dat` (demographics).
+2. Apply the same Naïve Bayes pipeline to the UCI Heart Disease dataset.
+
+## How to run
+
+```bash
+python src/naive_bayes_from_scratch.py   # toy NB, by hand
+python src/naive_bayes_sklearn_toy.py    # toy NB, scikit-learn
+python src/data_prep.py                  # inspect the MovieLens dataset
+python src/movie_recommender.py          # train + accuracy + data plots
+python src/evaluate.py                   # metrics + confusion matrix + ROC
+python src/tune.py                       # cross-validation + AUC heatmap
+```
+
+## Attribution
+
+Project replicated for learning purposes from Chapter 2 of *Python Machine
+Learning By Example, 4th Edition* by Yuxi (Hayden) Liu (Packt Publishing, 2024).
+Dataset: F. M. Harper and J. A. Konstan. 2015. *The MovieLens Datasets: History
+and Context.* ACM TiiS 5, 4, Article 19. https://doi.org/10.1145/2827872
