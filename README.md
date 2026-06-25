@@ -21,7 +21,9 @@ movie-recommendation-engine/
 │   ├── visualize.py                  # Reusable matplotlib/seaborn plot helpers
 │   ├── movie_recommender.py          # Train MultinomialNB recommender + plots
 │   ├── evaluate.py                   # Confusion matrix, precision/recall/F1, ROC/AUC
-│   └── tune.py                       # k-fold cross-validation hyperparameter search
+│   ├── tune.py                       # k-fold cross-validation hyperparameter search
+│   ├── features.py                   # Genre + demographic feature engineering
+│   └── enhanced_recommender.py       # Compare feature sets (Exercise 1)
 ├── images/                           # Generated result plots (committed)
 ├── data/                             # MovieLens 1M (gitignored, see Setup)
 ├── requirements.txt
@@ -55,6 +57,7 @@ This produces `data/ml-1m/ratings.dat` (and `movies.dat`, `users.dat`).
 - [x] **Movie recommender on MovieLens 1M** (`MultinomialNB`, ~71.6% accuracy)
 - [x] **Classification metrics** (confusion matrix, precision/recall/F1, ROC/AUC)
 - [x] **Hyperparameter tuning** with k-fold cross-validation
+- [x] **Extra features** — genre + demographic feature engineering (Exercise 1)
 
 ## Findings
 
@@ -206,6 +209,45 @@ tuning buys almost nothing (the retrained "best" model reaches AUC 0.681, about
 the same as the untuned 0.686). The real lever for improvement would be **better
 features** (movie genres, user demographics), not hyperparameter search.
 
+### 7. Adding genre and demographic features (Exercise 1)
+
+The book ends with an exercise: *can we do better by also using movie genres
+(`movies.dat`) and user demographics (`users.dat`)?* `src/features.py` builds two
+extra feature blocks, and `src/enhanced_recommender.py` compares four feature
+sets under the same `MultinomialNB` model and 80/20 split:
+
+- **Genre features** (18 dims): for each user and genre, the sum of their ratings
+  of movies in that genre — a genre-preference profile (target movie excluded so
+  it can't leak the label).
+- **Demographic features** (30 dims): one-hot gender + age bucket + occupation.
+
+| Feature set            | Dims | Accuracy | AUC      |
+|------------------------|------|----------|----------|
+| ratings only (baseline)| 3705 | 71.6%    | 0.6857   |
+| ratings + genres       | 3723 | 69.2%    | 0.6678   |
+| ratings + demographics | 3735 | 71.3%    | **0.6862** |
+| ratings + both         | 3753 | 69.0%    | 0.6684   |
+
+![Feature comparison](images/feature_comparison.png)
+
+**Takeaway (an honest negative result):** naïvely bolting on more features did
+**not** help.
+
+- **Genres made it worse** (AUC 0.686 → 0.668). The genre features are *sums of
+  ratings*, so they take large values (tens to hundreds) next to the 0–5 movie
+  features. `MultinomialNB` treats features like frequency counts, so these
+  high-magnitude columns dominate the likelihood product and distort it.
+- **Demographics were essentially neutral** — a negligible AUC gain (+0.0005),
+  within noise.
+
+This is a useful lesson in its own right: **more features ≠ better**, especially
+when their scale or representation doesn't match the model's assumptions. To make
+genre/demographic signals actually pay off you'd want either a model that handles
+mixed-scale features (e.g. gradient-boosted trees, covered in the book's next
+chapter), per-feature normalization, or a separate Naïve Bayes per feature type
+whose probabilities are then combined — rather than concatenating everything into
+one multinomial model.
+
 ## Conclusions
 
 - Naïve Bayes, implemented from scratch, exactly matches scikit-learn on the toy
@@ -216,12 +258,18 @@ features** (movie genres, user demographics), not hyperparameter search.
   a trivial "always recommend" baseline would beat it. Precision/recall/F1 and
   AUC reveal the model is good at confirming likes but poor at catching dislikes.
 - Cross-validation shows the model is **insensitive to hyperparameter tuning** on
-  this signal; meaningful gains would come from richer features.
+  this signal.
+- Adding genre and demographic features (Exercise 1) did **not** improve results
+  under `MultinomialNB` — genre rating-sums even hurt because their scale clashes
+  with the model's count-based assumptions. Richer features need a model that
+  fits them, not just concatenation.
 
-### Possible extensions (the book's exercises)
+### Possible extensions
 
-1. Add features from `movies.dat` (genres) and `users.dat` (demographics).
-2. Apply the same Naïve Bayes pipeline to the UCI Heart Disease dataset.
+1. Re-run the genre/demographic experiment with gradient-boosted trees, which
+   handle mixed-scale features natively.
+2. Apply the same Naïve Bayes pipeline to the UCI Heart Disease dataset
+   (the book's second exercise).
 
 ## How to run
 
@@ -232,6 +280,8 @@ python src/data_prep.py                  # inspect the MovieLens dataset
 python src/movie_recommender.py          # train + accuracy + data plots
 python src/evaluate.py                   # metrics + confusion matrix + ROC
 python src/tune.py                       # cross-validation + AUC heatmap
+python src/features.py                   # build genre + demographic features
+python src/enhanced_recommender.py       # compare feature sets (Exercise 1)
 ```
 
 ## Attribution

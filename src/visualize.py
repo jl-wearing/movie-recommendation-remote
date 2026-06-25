@@ -97,6 +97,34 @@ def plot_roc_curve(false_pos_rate, true_pos_rate, auc,
     return _save(fig, filename)
 
 
+def plot_feature_comparison(results, filename='feature_comparison.png'):
+    """Grouped bar chart of accuracy and AUC across feature sets.
+
+    @param results: {feature_set_name: {'accuracy': float, 'auc': float}}
+    """
+    names = list(results.keys())
+    accuracy = [results[n]['accuracy'] for n in names]
+    auc = [results[n]['auc'] for n in names]
+
+    x = np.arange(len(names))
+    width = 0.38
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+    b1 = ax.bar(x - width / 2, accuracy, width, label='Accuracy',
+                color='#4c72b0')
+    b2 = ax.bar(x + width / 2, auc, width, label='AUC', color='#dd8452')
+    ax.bar_label(b1, fmt='{:.3f}', padding=2, fontsize=9)
+    ax.bar_label(b2, fmt='{:.3f}', padding=2, fontsize=9)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(names, rotation=15, ha='right')
+    ax.set_ylabel('Score')
+    ax.set_ylim(0, 1.0)
+    ax.set_title('Effect of extra features on the recommender')
+    ax.legend(loc='lower right')
+    return _save(fig, filename)
+
+
 def plot_cv_auc_heatmap(auc_record, k, filename='cv_auc_heatmap.png'):
     """Heatmap of mean cross-validated AUC over (alpha, fit_prior) grid.
 
