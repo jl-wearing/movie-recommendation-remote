@@ -23,7 +23,8 @@ movie-recommendation-engine/
 │   ├── evaluate.py                   # Confusion matrix, precision/recall/F1, ROC/AUC
 │   ├── tune.py                       # k-fold cross-validation hyperparameter search
 │   ├── features.py                   # Genre + demographic feature engineering
-│   └── enhanced_recommender.py       # Compare feature sets (Exercise 1)
+│   ├── enhanced_recommender.py       # Compare feature sets (Exercise 1)
+│   └── gbt_comparison.py             # Same features with gradient-boosted trees
 ├── images/                           # Generated result plots (committed)
 ├── data/                             # MovieLens 1M (gitignored, see Setup)
 ├── requirements.txt
@@ -58,6 +59,7 @@ This produces `data/ml-1m/ratings.dat` (and `movies.dat`, `users.dat`).
 - [x] **Classification metrics** (confusion matrix, precision/recall/F1, ROC/AUC)
 - [x] **Hyperparameter tuning** with k-fold cross-validation
 - [x] **Extra features** — genre + demographic feature engineering (Exercise 1)
+- [x] **Model comparison** — gradient-boosted trees vs Naïve Bayes
 
 ## Findings
 
@@ -248,6 +250,37 @@ chapter), per-feature normalization, or a separate Naïve Bayes per feature type
 whose probabilities are then combined — rather than concatenating everything into
 one multinomial model.
 
+### 8. The right model unlocks the features
+
+Section 7's negative result raised a question: were the genre/demographic features
+useless, or was `MultinomialNB` just the wrong tool? `src/gbt_comparison.py` re-runs
+the exact same four feature sets with a **gradient-boosted tree**
+(`HistGradientBoostingClassifier`). Trees split on thresholds, so they are
+invariant to feature scale — a fair test of whether the features carry signal.
+
+| Feature set            | NB AUC | GBT AUC | GBT accuracy |
+|------------------------|--------|---------|--------------|
+| ratings only           | 0.686  | 0.739   | 84.5%        |
+| ratings + genres       | 0.668  | 0.726   | 84.7%        |
+| ratings + demographics | 0.686  | 0.742   | 83.5%        |
+| ratings + both         | 0.668  | **0.744** | 84.1%      |
+
+![Model comparison](images/model_comparison.png)
+
+**Takeaway:** the story flips completely.
+
+- **The model matters more than the features here.** Just switching NB → GBT on
+  the *same* ratings-only features lifts AUC from 0.686 to 0.739 and accuracy from
+  71.6% to 84.5% — finally clearing the ~83% majority-class baseline.
+- **With the right model, the extra features now help.** Under GBT, adding
+  demographics and genres together gives the **best AUC (0.744)**, whereas under
+  NB the same features *hurt*. The signal was there all along; NB's
+  scale-sensitive likelihood just couldn't use it.
+
+This closes the loop on Section 7: a negative result wasn't the end of the story —
+it pointed at the model, not the data. (Gradient-boosted trees are the subject of
+the book's Chapter 3, so this also previews where the book goes next.)
+
 ## Conclusions
 
 - Naïve Bayes, implemented from scratch, exactly matches scikit-learn on the toy
@@ -261,15 +294,18 @@ one multinomial model.
   this signal.
 - Adding genre and demographic features (Exercise 1) did **not** improve results
   under `MultinomialNB` — genre rating-sums even hurt because their scale clashes
-  with the model's count-based assumptions. Richer features need a model that
-  fits them, not just concatenation.
+  with the model's count-based assumptions.
+- Swapping in a **gradient-boosted tree** changed everything: AUC rose to **0.744**
+  and accuracy to **~84%**, and the extra features now *helped* rather than hurt.
+  The lesson: features and model must be chosen together — the same features can
+  be harmful or helpful depending on the model that consumes them.
 
 ### Possible extensions
 
-1. Re-run the genre/demographic experiment with gradient-boosted trees, which
-   handle mixed-scale features natively.
-2. Apply the same Naïve Bayes pipeline to the UCI Heart Disease dataset
-   (the book's second exercise).
+1. Tune the gradient-boosted tree (depth, learning rate, iterations) and add
+   cross-validation, as done for Naïve Bayes.
+2. Apply the same pipeline to the UCI Heart Disease dataset (the book's second
+   exercise).
 
 ## How to run
 
@@ -282,6 +318,7 @@ python src/evaluate.py                   # metrics + confusion matrix + ROC
 python src/tune.py                       # cross-validation + AUC heatmap
 python src/features.py                   # build genre + demographic features
 python src/enhanced_recommender.py       # compare feature sets (Exercise 1)
+python src/gbt_comparison.py             # gradient-boosted trees vs Naïve Bayes
 ```
 
 ## Attribution

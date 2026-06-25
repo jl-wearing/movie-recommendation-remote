@@ -125,6 +125,37 @@ def plot_feature_comparison(results, filename='feature_comparison.png'):
     return _save(fig, filename)
 
 
+def plot_model_auc_comparison(nb_results, gbt_results,
+                              filename='model_comparison.png'):
+    """Grouped bar chart of AUC for two models across the same feature sets.
+
+    @param nb_results:  {feature_set_name: {'auc': float, ...}}
+    @param gbt_results: {feature_set_name: {'auc': float, ...}}
+    """
+    names = list(nb_results.keys())
+    nb_auc = [nb_results[n]['auc'] for n in names]
+    gbt_auc = [gbt_results[n]['auc'] for n in names]
+
+    x = np.arange(len(names))
+    width = 0.38
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+    b1 = ax.bar(x - width / 2, nb_auc, width, label='MultinomialNB',
+                color='#4c72b0')
+    b2 = ax.bar(x + width / 2, gbt_auc, width, label='GradientBoosting',
+                color='#55a868')
+    ax.bar_label(b1, fmt='{:.3f}', padding=2, fontsize=9)
+    ax.bar_label(b2, fmt='{:.3f}', padding=2, fontsize=9)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(names, rotation=15, ha='right')
+    ax.set_ylabel('AUC')
+    ax.set_ylim(0, 1.0)
+    ax.set_title('AUC by model and feature set')
+    ax.legend(loc='lower right')
+    return _save(fig, filename)
+
+
 def plot_cv_auc_heatmap(auc_record, k, filename='cv_auc_heatmap.png'):
     """Heatmap of mean cross-validated AUC over (alpha, fit_prior) grid.
 
