@@ -19,7 +19,8 @@ movie-recommendation-engine/
 │   ├── naive_bayes_sklearn_toy.py    # Toy example: NB via scikit-learn BernoulliNB
 │   ├── data_prep.py                  # Load + prepare MovieLens 1M into (X, Y)
 │   ├── visualize.py                  # Reusable matplotlib/seaborn plot helpers
-│   └── movie_recommender.py          # Train MultinomialNB recommender + plots
+│   ├── movie_recommender.py          # Train MultinomialNB recommender + plots
+│   └── evaluate.py                   # Confusion matrix, precision/recall/F1, ROC/AUC
 ├── images/                           # Generated result plots (committed)
 ├── data/                             # MovieLens 1M (gitignored, see Setup)
 ├── requirements.txt
@@ -51,7 +52,7 @@ This produces `data/ml-1m/ratings.dat` (and `movies.dat`, `users.dat`).
 - [x] **Naïve Bayes with scikit-learn** (`BernoulliNB`)
 - [x] **MovieLens 1M data preparation** (rating matrix + binary labels)
 - [x] **Movie recommender on MovieLens 1M** (`MultinomialNB`, ~71.6% accuracy)
-- [ ] Classification metrics (confusion matrix, precision/recall/F1, ROC/AUC)
+- [x] **Classification metrics** (confusion matrix, precision/recall/F1, ROC/AUC)
 - [ ] Hyperparameter tuning with k-fold cross-validation
 
 ## Findings
@@ -150,3 +151,29 @@ of the time — matching the book. But remember the class imbalance: ~83% of use
 liked the target movie, so a naïve "always predict like" baseline would already
 score ~83% accuracy. **71.6% accuracy alone is therefore misleading**, which is
 exactly why the next section digs into precision, recall, F1 and AUC.
+
+### 5. Evaluating classification performance
+
+`src/evaluate.py` computes the metrics that survive class imbalance. The
+confusion matrix on the 686-sample test set:
+
+![Confusion matrix](images/confusion_matrix.png)
+
+|              | precision | recall | f1-score | support |
+|--------------|-----------|--------|----------|---------|
+| 0 (dislike)  | 0.29      | 0.56   | 0.38     | 107     |
+| 1 (like)     | 0.90      | 0.74   | 0.82     | 579     |
+| **accuracy** |           |        | **0.72** | 686     |
+
+The ROC curve, with AUC = **0.686**:
+
+![ROC curve](images/roc_curve.png)
+
+**Takeaway:** the metrics tell the real story that accuracy hid. The model is
+strong on the majority **like** class (F1 = 0.82) but weak on the minority
+**dislike** class (F1 = 0.38) — it misses many dislikes (148 false negatives).
+The **AUC of 0.686** is below the model's accuracy, and per the book's rule of
+thumb (0.7–0.8 acceptable, 0.8–0.9 great) it sits just under "acceptable" — fair
+given we use only the very sparse rating signal. This gap between accuracy and
+AUC is the whole reason model tuning (next section) is judged on AUC, not
+accuracy.
