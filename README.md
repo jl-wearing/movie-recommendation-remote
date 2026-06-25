@@ -1,12 +1,8 @@
 # Movie Recommendation Engine with Naïve Bayes
 
-A from-the-ground-up replication of **Chapter 2 — "Building a Movie Recommendation
-Engine with Naïve Bayes"** from *Python Machine Learning By Example, 4th Edition*
-(Yuxi (Hayden) Liu, Packt Publishing, 2024).
-
 The project frames movie recommendation as a **binary classification** problem:
 *given how a user rated other movies, predict whether they will like a target
-movie.* It builds Naïve Bayes twice — once from scratch, once with scikit-learn —
+movie.* It builds Naïve Bayes twice, i.e. -  once from scratch, once with scikit-learn —
 then trains and evaluates it on the real [MovieLens 1M](https://grouplens.org/datasets/movielens/1m/)
 dataset.
 
@@ -14,21 +10,21 @@ dataset.
 
 ```
 movie-recommendation-engine/
-├── src/
-│   ├── naive_bayes_from_scratch.py   # Toy example: NB implemented by hand
-│   ├── naive_bayes_sklearn_toy.py    # Toy example: NB via scikit-learn BernoulliNB
-│   ├── data_prep.py                  # Load + prepare MovieLens 1M into (X, Y)
-│   ├── visualize.py                  # Reusable matplotlib/seaborn plot helpers
-│   ├── movie_recommender.py          # Train MultinomialNB recommender + plots
-│   ├── evaluate.py                   # Confusion matrix, precision/recall/F1, ROC/AUC
-│   ├── tune.py                       # k-fold cross-validation hyperparameter search
-│   ├── features.py                   # Genre + demographic feature engineering
-│   ├── enhanced_recommender.py       # Compare feature sets (Exercise 1)
-│   └── gbt_comparison.py             # Same features with gradient-boosted trees
-├── images/                           # Generated result plots (committed)
-├── data/                             # MovieLens 1M (gitignored, see Setup)
-├── requirements.txt
-└── README.md
+src/
+   naive_bayes_from_scratch.py 
+   naive_bayes_sklearn_toy.py
+   data_prep.py 
+   visualize.py                
+   movie_recommender.py          
+   evaluate.py                   
+   tune.py                       
+   features.py                   
+   enhanced_recommender.py       
+   gbt_comparison.py             
+images/                           
+data/                            
+requirements.txt
+README.md
 ```
 
 ## Setup
@@ -40,34 +36,37 @@ A virtual environment (`ml-env/`) is used for all dependencies.
 pip install -r requirements.txt
 ```
 
-The MovieLens 1M dataset is not committed (it lives in the gitignored `data/`).
-Download and extract it once:
+The MovieLens 1M dataset can be downloaded here:
 
-```bash
-curl -sSL -o data/ml-1m.zip https://files.grouplens.org/datasets/movielens/ml-1m.zip
-python -c "import zipfile; zipfile.ZipFile('data/ml-1m.zip').extractall('data')"
-```
+https://files.grouplens.org/datasets/movielens/ml-1m.zip
 
 This produces `data/ml-1m/ratings.dat` (and `movies.dat`, `users.dat`).
 
-## Progress
+## Steps taken
 
-- [x] **Naïve Bayes from scratch** (toy 4-user dataset)
-- [x] **Naïve Bayes with scikit-learn** (`BernoulliNB`)
-- [x] **MovieLens 1M data preparation** (rating matrix + binary labels)
-- [x] **Movie recommender on MovieLens 1M** (`MultinomialNB`, ~71.6% accuracy)
-- [x] **Classification metrics** (confusion matrix, precision/recall/F1, ROC/AUC)
-- [x] **Hyperparameter tuning** with k-fold cross-validation
-- [x] **Extra features** — genre + demographic feature engineering (Exercise 1)
-- [x] **Model comparison** — gradient-boosted trees vs Naïve Bayes
+1. Naïve Bayes from scratch
+
+2. Naive Bayes with scikit-learn
+
+3. MovieLens 1M data preparation
+
+4. Movie recommender on MovieLens 1M (~71.6% accuracy)
+
+5. Classification metrics (confusion matrix, precision/recall/F1, ROC/AUC)
+
+6. Hyperparameter tuning with k-fold cross-validation
+
+7. Extra features — genre + demographic feature engineering
+
+8. Model comparison — gradient-boosted trees vs Naïve Bayes
 
 ## Findings
 
 ### 1. Naïve Bayes from scratch
 
-`src/naive_bayes_from_scratch.py` implements the four building blocks of the
-algorithm — `get_label_indices`, `get_prior`, `get_likelihood` (with Laplace
-smoothing) and `get_posterior` — and runs them on the book's toy dataset:
+src/naive_bayes_from_scratch.py implements the four building blocks of the
+algorithm being get_label_indices, get_prior, get_likelihood (with Laplace
+smoothing) and get_posterior, and runs them on the following dataset:
 
 | ID | m1 | m2 | m3 | Likes target |
 |----|----|----|----|--------------|
@@ -86,14 +85,14 @@ Posterior:  [{'Y': 0.9210, 'N': 0.0790}]
 ```
 
 **Takeaway:** there is a **92.1%** probability the new user likes the target
-movie. Laplace smoothing (`smoothing=1`) is essential — without it, the unseen
-feature value `m1=1` in the `N` class forces `P(N|x)=0` and the model would
-blindly predict `Y` every time.
+movie. Laplace smoothing (smoothing=1) is essential — without it, the unseen
+feature value m1=1 in the N class forces P(N|x)=0 and the model would
+blindly predict Y every time.
 
-### 2. Naïve Bayes with scikit-learn
+### 2. Naive Bayes with scikit-learn
 
-`src/naive_bayes_sklearn_toy.py` runs `BernoulliNB(alpha=1.0, fit_prior=True)` on
-the same toy data. `BernoulliNB` is the correct estimator because the features
+src/naive_bayes_sklearn_toy.py runs BernoulliNB(alpha=1.0, fit_prior=True) on
+the same toy data. BernoulliNB is the correct estimator because the features
 are binary. It agrees with the hand-written version to the last digit:
 
 ```
@@ -102,13 +101,13 @@ Prediction: ['Y']
 ```
 
 **Takeaway:** validating a from-scratch model against a trusted library
-implementation is a good sanity check — identical outputs confirm the manual
-prior/likelihood/posterior math is correct. `alpha` here is scikit-learn's name
+implementation is a good sanity check, i.e. -  identical outputs confirm the manual
+prior/likelihood/posterior math is correct. alpha here is scikit-learn's name
 for the Laplace smoothing factor.
 
 ### 3. Preparing the MovieLens 1M data
 
-`src/data_prep.py` turns the raw ratings into a classification dataset:
+src/data_prep.py turns the raw ratings into a classification dataset:
 
 - Reads **1,000,209 ratings** from **6,040 users** across **3,706 movies**.
 - Builds a dense `6040 × 3706` rating matrix (unrated cells = 0). The matrix is
@@ -141,9 +140,9 @@ flattering, so we need precision/recall/F1 and AUC to judge the model honestly.
 
 ### 4. Training the recommender (`MultinomialNB`)
 
-`src/movie_recommender.py` splits the data 80/20 (`random_state=42`, stratified
-class ratio preserved) and trains `MultinomialNB(alpha=1.0, fit_prior=True)`.
-`MultinomialNB` is used instead of `BernoulliNB` because the rating features are
+src/movie_recommender.py splits the data 80/20 (random_state=42, stratified
+class ratio preserved) and trains MultinomialNB(alpha=1.0, fit_prior=True).
+MultinomialNB is used instead of BernoulliNB because the rating features are
 integers 0–5, not binary.
 
 ```
@@ -153,14 +152,14 @@ The accuracy is: 71.6%
 ```
 
 **Takeaway:** the classifier recommends movies correctly about **three quarters**
-of the time — matching the book. But remember the class imbalance: ~83% of users
-liked the target movie, so a naïve "always predict like" baseline would already
+of the time. But remember the class imbalance: ~83% of users
+liked the target movie, so a naive "always predict like" baseline would already
 score ~83% accuracy. **71.6% accuracy alone is therefore misleading**, which is
 exactly why the next section digs into precision, recall, F1 and AUC.
 
 ### 5. Evaluating classification performance
 
-`src/evaluate.py` computes the metrics that survive class imbalance. The
+src/evaluate.py computes the metrics that survive class imbalance. The
 confusion matrix on the 686-sample test set:
 
 ![Confusion matrix](images/confusion_matrix.png)
@@ -186,8 +185,8 @@ accuracy.
 
 ### 6. Tuning with k-fold cross-validation
 
-`src/tune.py` runs 5-fold stratified cross-validation, grid-searching the
-smoothing factor `alpha ∈ {1..6}` and `fit_prior ∈ {True, False}`, scoring each
+src/tune.py runs 5-fold stratified cross-validation, grid-searching the
+smoothing factor alpha between 1-6 and fit_prior an element of {True, False}, scoring each
 combination by mean AUC:
 
 ![Cross-validated AUC](images/cv_auc_heatmap.png)
@@ -197,13 +196,6 @@ Best params: alpha=6, fit_prior=True (mean CV AUC = 0.65478)
 AUC with the best model: 0.6806
 ```
 
-> **Note on reproducibility:** the book writes
-> `StratifiedKFold(n_splits=k, random_state=42)`, but current scikit-learn
-> requires `shuffle=True` whenever `random_state` is set, so this project uses
-> `shuffle=True`. The shuffled folds shift the absolute AUCs slightly, so the
-> "best" cell here (`alpha=6, True`) differs from the book's (`alpha=2, False`,
-> AUC 0.65823). The methodology and conclusion are unchanged.
-
 **Takeaway:** the most important result is what the heatmap *doesn't* show —
 **all 12 combinations fall within ~0.003 AUC of each other**. On this sparse
 rating signal the model is effectively insensitive to these hyperparameters, so
@@ -211,9 +203,9 @@ tuning buys almost nothing (the retrained "best" model reaches AUC 0.681, about
 the same as the untuned 0.686). The real lever for improvement would be **better
 features** (movie genres, user demographics), not hyperparameter search.
 
-### 7. Adding genre and demographic features (Exercise 1)
+### 7. Adding genre and demographic features
 
-The book ends with an exercise: *can we do better by also using movie genres
+*can we do better by also using movie genres
 (`movies.dat`) and user demographics (`users.dat`)?* `src/features.py` builds two
 extra feature blocks, and `src/enhanced_recommender.py` compares four feature
 sets under the same `MultinomialNB` model and 80/20 split:
@@ -304,26 +296,8 @@ the book's Chapter 3, so this also previews where the book goes next.)
 
 1. Tune the gradient-boosted tree (depth, learning rate, iterations) and add
    cross-validation, as done for Naïve Bayes.
-2. Apply the same pipeline to the UCI Heart Disease dataset (the book's second
-   exercise).
-
-## How to run
-
-```bash
-python src/naive_bayes_from_scratch.py   # toy NB, by hand
-python src/naive_bayes_sklearn_toy.py    # toy NB, scikit-learn
-python src/data_prep.py                  # inspect the MovieLens dataset
-python src/movie_recommender.py          # train + accuracy + data plots
-python src/evaluate.py                   # metrics + confusion matrix + ROC
-python src/tune.py                       # cross-validation + AUC heatmap
-python src/features.py                   # build genre + demographic features
-python src/enhanced_recommender.py       # compare feature sets (Exercise 1)
-python src/gbt_comparison.py             # gradient-boosted trees vs Naïve Bayes
-```
 
 ## Attribution
 
-Project replicated for learning purposes from Chapter 2 of *Python Machine
-Learning By Example, 4th Edition* by Yuxi (Hayden) Liu (Packt Publishing, 2024).
 Dataset: F. M. Harper and J. A. Konstan. 2015. *The MovieLens Datasets: History
 and Context.* ACM TiiS 5, 4, Article 19. https://doi.org/10.1145/2827872
