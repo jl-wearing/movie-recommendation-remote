@@ -16,7 +16,9 @@ dataset.
 movie-recommendation-engine/
 ├── src/
 │   ├── naive_bayes_from_scratch.py   # Toy example: NB implemented by hand
-│   └── naive_bayes_sklearn_toy.py    # Toy example: NB via scikit-learn BernoulliNB
+│   ├── naive_bayes_sklearn_toy.py    # Toy example: NB via scikit-learn BernoulliNB
+│   └── data_prep.py                  # Load + prepare MovieLens 1M into (X, Y)
+├── data/                             # MovieLens 1M (gitignored, see Setup)
 ├── requirements.txt
 └── README.md
 ```
@@ -30,10 +32,21 @@ A virtual environment (`ml-env/`) is used for all dependencies.
 pip install -r requirements.txt
 ```
 
+The MovieLens 1M dataset is not committed (it lives in the gitignored `data/`).
+Download and extract it once:
+
+```bash
+curl -sSL -o data/ml-1m.zip https://files.grouplens.org/datasets/movielens/ml-1m.zip
+python -c "import zipfile; zipfile.ZipFile('data/ml-1m.zip').extractall('data')"
+```
+
+This produces `data/ml-1m/ratings.dat` (and `movies.dat`, `users.dat`).
+
 ## Progress
 
 - [x] **Naïve Bayes from scratch** (toy 4-user dataset)
 - [x] **Naïve Bayes with scikit-learn** (`BernoulliNB`)
+- [x] **MovieLens 1M data preparation** (rating matrix + binary labels)
 - [ ] Movie recommender on MovieLens 1M (`MultinomialNB`)
 - [ ] Classification metrics (confusion matrix, precision/recall/F1, ROC/AUC)
 - [ ] Hyperparameter tuning with k-fold cross-validation
@@ -82,3 +95,27 @@ Prediction: ['Y']
 implementation is a good sanity check — identical outputs confirm the manual
 prior/likelihood/posterior math is correct. `alpha` here is scikit-learn's name
 for the Laplace smoothing factor.
+
+### 3. Preparing the MovieLens 1M data
+
+`src/data_prep.py` turns the raw ratings into a classification dataset:
+
+- Reads **1,000,209 ratings** from **6,040 users** across **3,706 movies**.
+- Builds a dense `6040 × 3706` rating matrix (unrated cells = 0). The matrix is
+  ~99% zeros — the data is extremely **sparse**.
+- Picks the most-rated movie as the **target** (movie ID `2858`, *American
+  Beauty*, with 3,428 ratings) so predictions can be validated.
+- Frames it as binary classification: a user's ratings of the other 3,705 movies
+  are the features `X`; the label `Y` is `1` if they rated the target **> 3**.
+
+Resulting dataset:
+
+```
+Shape of X: (3428, 3705)
+Shape of Y: (3428,)
+2853 positive samples and 575 negative samples.
+```
+
+**Takeaway:** the dataset is **imbalanced** (~83% positive / ~17% negative). That
+is the recurring theme of the rest of the project: plain accuracy will look
+flattering, so we need precision/recall/F1 and AUC to judge the model honestly.
