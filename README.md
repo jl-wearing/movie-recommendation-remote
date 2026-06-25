@@ -1,4 +1,4 @@
-# Movie Recommendation Engine with Naïve Bayes
+# Movie Recommendation Engine with Naive Bayes
 
 The project frames movie recommendation as a **binary classification** problem:
 *given how a user rated other movies, predict whether they will like a target
