@@ -17,7 +17,10 @@ movie-recommendation-engine/
 ├── src/
 │   ├── naive_bayes_from_scratch.py   # Toy example: NB implemented by hand
 │   ├── naive_bayes_sklearn_toy.py    # Toy example: NB via scikit-learn BernoulliNB
-│   └── data_prep.py                  # Load + prepare MovieLens 1M into (X, Y)
+│   ├── data_prep.py                  # Load + prepare MovieLens 1M into (X, Y)
+│   ├── visualize.py                  # Reusable matplotlib/seaborn plot helpers
+│   └── movie_recommender.py          # Train MultinomialNB recommender + plots
+├── images/                           # Generated result plots (committed)
 ├── data/                             # MovieLens 1M (gitignored, see Setup)
 ├── requirements.txt
 └── README.md
@@ -47,7 +50,7 @@ This produces `data/ml-1m/ratings.dat` (and `movies.dat`, `users.dat`).
 - [x] **Naïve Bayes from scratch** (toy 4-user dataset)
 - [x] **Naïve Bayes with scikit-learn** (`BernoulliNB`)
 - [x] **MovieLens 1M data preparation** (rating matrix + binary labels)
-- [ ] Movie recommender on MovieLens 1M (`MultinomialNB`)
+- [x] **Movie recommender on MovieLens 1M** (`MultinomialNB`, ~71.6% accuracy)
 - [ ] Classification metrics (confusion matrix, precision/recall/F1, ROC/AUC)
 - [ ] Hyperparameter tuning with k-fold cross-validation
 
@@ -116,6 +119,34 @@ Shape of Y: (3428,)
 2853 positive samples and 575 negative samples.
 ```
 
+The rating distribution (log scale) shows just how sparse the matrix is — over
+21M of the ~22.4M cells are unrated:
+
+![Rating distribution](images/rating_distribution.png)
+
+And the target movie's labels are clearly imbalanced:
+
+![Class balance](images/class_balance.png)
+
 **Takeaway:** the dataset is **imbalanced** (~83% positive / ~17% negative). That
 is the recurring theme of the rest of the project: plain accuracy will look
 flattering, so we need precision/recall/F1 and AUC to judge the model honestly.
+
+### 4. Training the recommender (`MultinomialNB`)
+
+`src/movie_recommender.py` splits the data 80/20 (`random_state=42`, stratified
+class ratio preserved) and trains `MultinomialNB(alpha=1.0, fit_prior=True)`.
+`MultinomialNB` is used instead of `BernoulliNB` because the rating features are
+integers 0–5, not binary.
+
+```
+Training samples: 2742, testing samples: 686
+First 10 predictions: [1 1 1 0 0 0 1 1 1 1]
+The accuracy is: 71.6%
+```
+
+**Takeaway:** the classifier recommends movies correctly about **three quarters**
+of the time — matching the book. But remember the class imbalance: ~83% of users
+liked the target movie, so a naïve "always predict like" baseline would already
+score ~83% accuracy. **71.6% accuracy alone is therefore misleading**, which is
+exactly why the next section digs into precision, recall, F1 and AUC.

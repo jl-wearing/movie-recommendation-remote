@@ -11,10 +11,14 @@ problem as binary classification for a single target movie:
 Only users who actually rated the target movie are kept, so predictions can be
 validated against ground truth.
 """
+import os
+
 import numpy as np
 import pandas as pd
 
-DATA_PATH = 'data/ml-1m/ratings.dat'
+# Anchor to the project root so the script works from any working directory.
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_PATH = os.path.join(PROJECT_ROOT, 'data', 'ml-1m', 'ratings.dat')
 # Most-rated movie in MovieLens 1M (American Beauty, 1999) -> used as the target.
 TARGET_MOVIE_ID = 2858
 # Ratings strictly greater than this threshold count as a "like".
