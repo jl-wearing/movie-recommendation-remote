@@ -15,7 +15,8 @@ dataset.
 ```
 movie-recommendation-engine/
 ├── src/
-│   └── naive_bayes_from_scratch.py   # Toy example: NB implemented by hand
+│   ├── naive_bayes_from_scratch.py   # Toy example: NB implemented by hand
+│   └── naive_bayes_sklearn_toy.py    # Toy example: NB via scikit-learn BernoulliNB
 ├── requirements.txt
 └── README.md
 ```
@@ -32,7 +33,7 @@ pip install -r requirements.txt
 ## Progress
 
 - [x] **Naïve Bayes from scratch** (toy 4-user dataset)
-- [ ] Naïve Bayes with scikit-learn (`BernoulliNB`)
+- [x] **Naïve Bayes with scikit-learn** (`BernoulliNB`)
 - [ ] Movie recommender on MovieLens 1M (`MultinomialNB`)
 - [ ] Classification metrics (confusion matrix, precision/recall/F1, ROC/AUC)
 - [ ] Hyperparameter tuning with k-fold cross-validation
@@ -65,3 +66,19 @@ Posterior:  [{'Y': 0.9210, 'N': 0.0790}]
 movie. Laplace smoothing (`smoothing=1`) is essential — without it, the unseen
 feature value `m1=1` in the `N` class forces `P(N|x)=0` and the model would
 blindly predict `Y` every time.
+
+### 2. Naïve Bayes with scikit-learn
+
+`src/naive_bayes_sklearn_toy.py` runs `BernoulliNB(alpha=1.0, fit_prior=True)` on
+the same toy data. `BernoulliNB` is the correct estimator because the features
+are binary. It agrees with the hand-written version to the last digit:
+
+```
+Predicted probabilities (N, Y): [[0.07896399 0.92103601]]
+Prediction: ['Y']
+```
+
+**Takeaway:** validating a from-scratch model against a trusted library
+implementation is a good sanity check — identical outputs confirm the manual
+prior/likelihood/posterior math is correct. `alpha` here is scikit-learn's name
+for the Laplace smoothing factor.
